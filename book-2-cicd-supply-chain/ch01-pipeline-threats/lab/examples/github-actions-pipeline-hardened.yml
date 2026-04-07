@@ -1,0 +1,99 @@
+# EDUCATIONAL EXAMPLE — Hardened GitHub Actions Pipeline
+# This pipeline addresses all vulnerabilities identified in github-actions-pipeline-vulnerable.yml.
+# Each mitigation is annotated with the control it applies.
+# See the STRIDE threat analysis table at the bottom for the vulnerability-to-control mapping.
+
+name: Deploy Payment Service (HARDENED)
+
+on:
+  push:
+    branches: ["main"]    # CONTROL: Only runs on the main branch — no accidental runs on feature branches
+
+# CONTROL: Minimum required permissions declared explicitly.
+# Default is 'none' when permissions block is present.
+# https://docs.github.com/en/actions/security-guides/automatic-token-authentication
+permissions:
+  contents: read            # Read source code
+  id-token: write           # Required for OIDC token request (used in AWS credential step)
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment: production  # CONTROL: Requires environment protection rules approval for production deployments
+
+    steps:
+      # CONTROL: Actions are pinned to specific commit SHAs.
+      # Tag-based references (e.g., @v3) can be redirected by maintainers.
+      # SHA pinning ensures the exact action code is used every time.
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+
+      - name: Setup Node
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af  # v4.1.0
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        # CONTROL: 'npm ci' installs exactly what is in package-lock.json, refusing to update it.
+        # This prevents dependency confusion and ensures reproducible builds.
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      # CONTROL: OIDC federation — no long-lived credentials stored anywhere.
+      # GitHub Actions exchanges its OIDC token for temporary AWS credentials at runtime.
+      # The IAM role trust policy restricts assumption to this specific workflow on main.
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502  # v4.0.2
+        with:
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/github-actions-payment-service-deploy
+          aws-region: us-east-1
+          # Credentials are injected as environment variables for this step only,
+          # not as named variables that persist into subsequent steps.
+
+      - name: Deploy artifacts to S3
+        run: aws s3 cp ./dist s3://${{ vars.DEPLOYMENT_BUCKET }}/ --recursive
+
+      - name: Deploy to ECS
+        # CONTROL: No interpolation of attacker-controlled inputs (github.event.pull_request.*)
+        # into shell commands. Use vars.* (repository variables) instead for configuration.
+        env:
+          SERVICE_NAME: ${{ vars.ECS_SERVICE_NAME }}
+          CLUSTER_NAME: ${{ vars.ECS_CLUSTER_NAME }}
+        run: |
+          aws ecs update-service \
+            --cluster "${CLUSTER_NAME}" \
+            --service "${SERVICE_NAME}" \
+            --force-new-deployment
+
+      - name: Notify Slack
+        # CONTROL: Slack notification uses a repository variable for the channel ID,
+        # not a webhook URL. The actual webhook URL remains in AWS Secrets Manager,
+        # fetched by the Lambda notifier — not exposed to the workflow.
+        env:
+          SLACK_CHANNEL: ${{ vars.SLACK_DEPLOY_CHANNEL }}
+        run: |
+          aws lambda invoke \
+            --function-name slack-notifier \
+            --payload "{\"channel\": \"${SLACK_CHANNEL}\", \"text\": \"Deployed payment-service to production\"}" \
+            /tmp/slack-response.json
+
+# =============================================================================
+# STRIDE Threat Analysis: Vulnerable vs. Hardened Control Mapping
+# =============================================================================
+#
+# | STRIDE Category | Vulnerable Pattern                    | Hardened Control                      |
+# |-----------------|---------------------------------------|---------------------------------------|
+# | Spoofing        | Tag-based action refs (movable)       | SHA-pinned action references          |
+# | Tampering       | npm install (arbitrary resolution)    | npm ci (lock file enforcement)        |
+# | Tampering       | Runs on all branches                  | Restricted to main branch only        |
+# | Information     | Long-lived AWS keys in secrets        | OIDC federation (no stored keys)      |
+# | Disclosure      | Credentials in env vars (log risk)    | aws-actions handles credential scope  |
+# | Elevation       | No permissions declaration            | Explicit minimum permissions block    |
+# | Elevation       | PR event runs with secret access      | Environment protection rules          |
+# | Tampering       | User-controlled input in shell cmds   | Inputs via env vars, not interpolation|

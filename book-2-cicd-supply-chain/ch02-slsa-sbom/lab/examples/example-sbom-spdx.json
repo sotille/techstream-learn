@@ -1,0 +1,110 @@
+{
+  "_comment": "Educational example SPDX 2.3 SBOM in JSON format. This represents the output of running 'syft <image> -o spdx-json'. Compare with example-sbom-cyclonedx.json to understand format differences. SPDX is an ISO standard (ISO/IEC 5962:2021) used in many regulated industries.",
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "registry.internal.example.com/payment-service-v1.0.0",
+  "documentNamespace": "https://example.com/sbom/payment-service-v1.0.0-3e671687",
+  "creationInfo": {
+    "created": "2026-04-07T12:00:00Z",
+    "creators": [
+      "Tool: syft-0.90.0",
+      "Organization: Example Corp"
+    ],
+    "licenseListVersion": "3.21"
+  },
+  "packages": [
+    {
+      "SPDXID": "SPDXRef-Package-openssl",
+      "name": "openssl",
+      "versionInfo": "3.0.8",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:deb/debian/openssl@3.0.8-1?distro=debian-12"
+        }
+      ],
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "Apache-2.0",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: The OpenSSL Project"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-libc6",
+      "name": "libc6",
+      "versionInfo": "2.36-9",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:deb/debian/libc6@2.36-9?distro=debian-12"
+        }
+      ],
+      "licenseConcluded": "LGPL-2.1-only",
+      "licenseDeclared": "LGPL-2.1-only",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: GNU Project"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-gin",
+      "name": "github.com/gin-gonic/gin",
+      "versionInfo": "1.9.1",
+      "downloadLocation": "https://github.com/gin-gonic/gin",
+      "filesAnalyzed": false,
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:golang/github.com/gin-gonic/gin@1.9.1"
+        }
+      ],
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-log4j",
+      "name": "log4j-core",
+      "versionInfo": "2.17.2",
+      "downloadLocation": "https://logging.apache.org/log4j/2.x/",
+      "filesAnalyzed": false,
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:maven/org.apache.logging.log4j/log4j-core@2.17.2"
+        }
+      ],
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "Apache-2.0",
+      "copyrightText": "Copyright 2022 The Apache Software Foundation"
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Package-openssl"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Package-libc6"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Package-gin"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Package-log4j"
+    }
+  ]
+}

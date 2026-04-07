@@ -104,7 +104,59 @@ A completed threat model document containing:
 
 ---
 
-## Example Output (Partial)
+## Expected Output Reference
+
+The following section shows what completed output should look like at each step.
+Use these as a quality benchmark, not as answers to copy — your analysis of the example
+pipeline may identify different threats depending on your perspective.
+
+### Step 1 — Expected Trust Boundary Inventory (example pipeline)
+
+Based on `examples/github-actions-pipeline-vulnerable.yml`, the trust boundaries are:
+
+| ID | Trust Boundary | From | To | Risk Level |
+|----|---------------|------|----|------------|
+| TB-1 | Code commit | Developer workstation | GitHub repository | Medium |
+| TB-2 | Workflow trigger | GitHub repository | GitHub Actions runner | High |
+| TB-3 | Dependency install | GitHub Actions runner | npm/PyPI registries | High |
+| TB-4 | Cloud deployment | GitHub Actions runner | AWS (ECS, S3) | Critical |
+| TB-5 | Action execution | GitHub Actions runner | Third-party GitHub Actions | High |
+| TB-6 | Notification | GitHub Actions runner | Slack API | Low |
+
+**Note:** TB-4 is Critical because long-lived AWS credentials cross this boundary in the vulnerable pipeline. TB-5 is High because third-party action code executes with full access to the runner environment, including all secrets.
+
+---
+
+### Step 3 — Expected Risk Scoring Output (partial)
+
+After applying STRIDE to the six trust boundaries and scoring Impact × Likelihood, a well-formed
+risk scoring table for the example pipeline looks like this:
+
+| Threat ID | Trust Boundary | STRIDE | Description (Short) | Impact | Likelihood | Score |
+|-----------|---------------|--------|---------------------|--------|------------|-------|
+| TB4-E-01 | Runner → AWS | E | Long-lived keys used from any branch PR | 5 | 4 | 20 |
+| TB5-T-01 | Runner → 3rd-party actions | T | Tag-movable action runs attacker code | 5 | 3 | 15 |
+| TB3-T-01 | Runner → npm registry | T | Dependency confusion — malicious pkg name | 5 | 3 | 15 |
+| TB2-I-01 | Repo → Runner | I | PR comment triggers workflow; secrets exposed | 4 | 4 | 16 |
+| TB4-I-01 | Runner → AWS | I | AWS credentials visible in debug logs | 4 | 3 | 12 |
+| TB2-T-01 | Repo → Runner | T | Attacker-controlled input injected into shell | 5 | 2 | 10 |
+| TB1-R-01 | Workstation → Repo | R | Unsigned commits — no attribution on changes | 3 | 4 | 12 |
+| TB5-I-01 | Runner → 3rd-party actions | I | Action exfiltrates GITHUB_TOKEN via HTTP | 4 | 2 | 8 |
+| TB3-D-01 | Runner → npm registry | D | Registry outage blocks all deployments | 3 | 3 | 9 |
+| TB6-S-01 | Runner → Slack | S | Webhook URL leaked; attacker sends fake alerts | 2 | 3 | 6 |
+
+**Top 3 unmitigated threats in the example pipeline:**
+1. TB4-E-01 — Long-lived AWS credentials usable from any branch (Risk: 20) — **Not mitigated**
+2. TB5-T-01 — Third-party actions without SHA pinning (Risk: 15) — **Not mitigated**
+3. TB3-T-01 — npm install without private registry enforcement (Risk: 15) — **Not mitigated**
+
+Compare these with the differences between `github-actions-pipeline-vulnerable.yml` and
+`github-actions-pipeline-hardened.yml` in `examples/` — each unmitigated threat above is
+addressed by a specific change in the hardened version.
+
+---
+
+## Example Output (Partial — Single Threat)
 
 ```
 Threat ID: REG-T-01

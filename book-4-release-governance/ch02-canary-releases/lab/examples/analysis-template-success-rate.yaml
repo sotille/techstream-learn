@@ -1,0 +1,32 @@
+# AnalysisTemplate — Success Rate Quality Gate
+# Measures the HTTP success rate of the canary service using Prometheus.
+# Runs 5 measurements at 1-minute intervals.
+# Fails if the success rate drops below 99% in any single measurement (failureLimit: 1).
+# This template is referenced by the Rollout in payment-service-rollout-with-analysis.yaml.
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: success-rate-analysis
+  namespace: payments-lab
+spec:
+  args:
+    - name: service-name
+      value: payment-service
+  metrics:
+    - name: success-rate
+      interval: 1m
+      count: 5
+      successCondition: result[0] >= 0.99
+      failureLimit: 1
+      provider:
+        prometheus:
+          # Update this address to match your Prometheus service ClusterIP
+          address: http://prometheus-operated.monitoring.svc.cluster.local:9090
+          query: |
+            sum(rate(http_requests_total{
+              service="{{args.service-name}}",
+              code=~"2.."
+            }[1m])) /
+            sum(rate(http_requests_total{
+              service="{{args.service-name}}"
+            }[1m]))

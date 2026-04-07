@@ -1,0 +1,30 @@
+# Service for the payment-service Rollout.
+# Argo Rollouts manages traffic splitting through the stable/canary service pair.
+# This is the primary (stable) service — always points to the current stable version.
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-service
+  namespace: payments-lab
+spec:
+  selector:
+    app: payment-service
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+---
+# Canary service — Argo Rollouts routes the canary percentage through this service.
+# Used by service mesh integrations (Istio, Linkerd) for precise weight control.
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-service-canary
+  namespace: payments-lab
+spec:
+  selector:
+    app: payment-service
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080

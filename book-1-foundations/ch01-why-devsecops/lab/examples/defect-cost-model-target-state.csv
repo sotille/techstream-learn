@@ -1,0 +1,13 @@
+Stage,Defects Per Month (Before),Defects Per Month (After),Catch Rate Added,Stage Multiplier,Baseline Fix Time (hours),Hourly Rate ($),Monthly Cost After ($),Notes
+Pre-commit,0,11.4,60%,1,1,120,1368,"Gitleaks + Semgrep catch 60% of defects shifted to 1x cost"
+CI Pipeline (SAST/SCA),0,3.8,20%,3,3,120,1368,"SCA + SAST catch next 20% at 3x cost"
+QA / Staging,5,1,0%,15,15,120,1800,"Only 20% of original QA defects remain"
+Penetration Test,10,2,0%,40,40,120,9600,"80% reduction from earlier detection"
+Production (pre-breach),3,0.6,0%,100,100,120,7200,"80% reduction from earlier detection"
+Post-breach (quarterly),0.25,0.05,0%,500,500,120,3000,"80% reduction propagates to incidents"
+TOTAL (Before),,,,,,,108000,
+TOTAL (After),,,,,,,24336,
+MONTHLY SAVINGS,,,,,,,83664,
+ANNUAL SAVINGS,,,,,,,1003968,"~$1M annual savings before tooling cost"
+TOOLING COST/MONTH,,,,,,,2000,"Licensing + 20 hrs maintenance @ $120/hr = $4400/month fully loaded"
+NET ANNUAL ROI,,,,,,,,(83664 - 4400) * 12 = $951168,"Rough estimate — adjust to your actual tooling and staffing costs"

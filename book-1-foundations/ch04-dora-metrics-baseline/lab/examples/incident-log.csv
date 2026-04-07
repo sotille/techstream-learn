@@ -1,0 +1,7 @@
+incident_id,triggered_by_deployment,detected_at,resolved_at,severity,description
+INC-001,deploy-0003,2026-01-03T10:45:00,2026-01-03T12:30:00,SEV2,Payments API returning 500 for checkout requests
+INC-002,deploy-0006,2026-01-07T15:50:00,2026-01-07T18:15:00,SEV3,User profile pages slow (> 5s response time)
+INC-003,deploy-0012,2026-01-15T11:30:00,2026-01-15T13:45:00,SEV2,Payment confirmation emails not sending
+INC-004,deploy-0018,2026-01-23T12:15:00,2026-01-23T14:00:00,SEV3,Reporting service timeout on large date range queries
+INC-005,deploy-0021,2026-01-28T14:45:00,2026-01-29T09:30:00,SEV1,Payments API down — incorrect database migration applied
+INC-006,deploy-0027,2026-02-05T10:30:00,2026-02-05T11:45:00,SEV3,Notification delays — queue processing backlog

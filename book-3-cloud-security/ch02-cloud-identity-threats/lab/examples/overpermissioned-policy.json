@@ -1,0 +1,19 @@
+{
+  "_comment": "EDUCATIONAL EXAMPLE — Intentionally overpermissioned deployment pipeline policy. This policy contains multiple privilege escalation paths. Analyze it in Step 2 of the lab.",
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "DeploymentRole",
+      "Effect": "Allow",
+      "Action": [
+        "iam:PassRole",
+        "iam:CreatePolicy",
+        "iam:CreatePolicyVersion",
+        "ec2:RunInstances",
+        "s3:*",
+        "lambda:*"
+      ],
+      "Resource": "*"
+    }
+  ]
+}

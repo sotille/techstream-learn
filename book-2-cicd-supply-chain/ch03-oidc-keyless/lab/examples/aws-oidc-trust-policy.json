@@ -1,0 +1,22 @@
+{
+  "_comment": "AWS IAM Role Trust Policy for GitHub Actions OIDC Federation. Replace ACCOUNT_ID, ORG, and REPO with your values. This trust policy allows GitHub Actions workflows on the main branch of the specified repository to assume this role. No long-lived credentials are required — the pipeline exchanges its OIDC token for temporary AWS credentials at runtime.",
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "GitHubActionsOIDC",
+      "Effect": "Allow",
+      "Principal": {
+        "Federated": "arn:aws:iam::ACCOUNT_ID:oidc-provider/token.actions.githubusercontent.com"
+      },
+      "Action": "sts:AssumeRoleWithWebIdentity",
+      "Condition": {
+        "StringEquals": {
+          "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
+        },
+        "StringLike": {
+          "token.actions.githubusercontent.com:sub": "repo:ORG/REPO:ref:refs/heads/main"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+# EDUCATIONAL EXAMPLE — Pod compliant with Pod Security Standards (restricted profile)
+# This pod satisfies all requirements for the 'restricted' profile:
+#   - allowPrivilegeEscalation: false
+#   - capabilities.drop: ["ALL"]
+#   - runAsNonRoot: true
+#   - runAsUser: 1000 (non-root UID)
+#   - seccompProfile.type: RuntimeDefault
+#   - readOnlyRootFilesystem: true (best practice beyond PSS minimum)
+apiVersion: v1
+kind: Pod
+metadata:
+  name: payments-api
+  labels:
+    app: payments-api
+    team: payments
+spec:
+  automountServiceAccountToken: false
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - name: app
+      image: gcr.io/distroless/static-debian11:nonroot
+      ports:
+        - containerPort: 8080
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop:
+            - ALL
+      resources:
+        requests:
+          memory: "64Mi"
+          cpu: "50m"
+        limits:
+          memory: "128Mi"
+          cpu: "100m"

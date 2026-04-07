@@ -1,0 +1,66 @@
+# EDUCATIONAL EXAMPLE — Intentionally Vulnerable GitHub Actions Pipeline
+# This pipeline represents common patterns that create security risks.
+# Each vulnerability is annotated with the STRIDE threat category and risk description.
+# Compare with github-actions-pipeline-hardened.yml to see the mitigations.
+#
+# DO NOT use this in production — it is for threat modeling analysis only.
+
+name: Deploy Payment Service (VULNERABLE)
+
+on:
+  push:
+    branches: ["*"]         # THREAT: Runs on all branches, including attacker-controlled forks
+  pull_request:             # THREAT: PR from forked repo can access secrets if not scoped correctly
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    # THREAT: No permissions declared — defaults to read+write for all scopes
+    # An attacker who hijacks this workflow has full repository write access
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3   # THREAT: No pinned SHA — version tag can be moved by maintainer
+
+      - name: Setup Node
+        uses: actions/setup-node@v3  # THREAT: No pinned SHA
+
+      - name: Install dependencies
+        run: npm install             # THREAT: Installs whatever is in package.json, no lock file verification
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      # THREAT: AWS credentials are long-lived and stored as repository secrets
+      # Any workflow run (including from PRs) can access these credentials
+      - name: Configure AWS credentials
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+
+        run: |
+          # THREAT: Credentials are passed as environment variables — visible in debug logs
+          # if ACTIONS_STEP_DEBUG is enabled
+          aws s3 cp ./dist s3://my-deployment-bucket/ --recursive
+
+      - name: Deploy to ECS
+        run: |
+          # THREAT: ${{ github.event.pull_request.title }} is attacker-controlled input
+          # injected directly into a shell command — command injection risk
+          echo "Deploying: ${{ github.event.pull_request.title }}"
+          aws ecs update-service \
+            --cluster production \
+            --service payment-service \
+            --force-new-deployment
+
+      - name: Notify Slack
+        run: |
+          curl -X POST ${{ secrets.SLACK_WEBHOOK }} \
+            -d '{"text": "Deployed to production"}'
+          # THREAT: Webhook URL in secrets, but the curl command output
+          # (including response body) may appear in logs

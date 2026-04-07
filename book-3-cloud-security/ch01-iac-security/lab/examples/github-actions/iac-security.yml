@@ -1,0 +1,81 @@
+name: IaC Security Scan
+
+# Trigger on pull requests that modify Terraform or YAML files.
+# This gate prevents misconfigured infrastructure from being merged.
+on:
+  pull_request:
+    paths:
+      - '**.tf'
+      - '**.tfvars'
+      - '**.yaml'
+      - '**.yml'
+
+permissions:
+  contents: read
+  security-events: write   # Required for SARIF upload to GitHub Security tab
+
+jobs:
+  checkov-scan:
+    name: Checkov IaC Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Run Checkov — Terraform
+        id: checkov-terraform
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: .
+          framework: terraform
+          output_format: sarif
+          output_file_path: checkov-terraform.sarif
+          soft_fail: false         # Block PR on HIGH/CRITICAL findings
+          check: CKV_AWS_*,CKV2_AWS_*,CKV_CUSTOM_*
+          external_checks_dir: custom_checks
+          # Skip checks that are known false positives for this repository
+          # skip_check: CKV_AWS_144   # Example: S3 cross-region replication not required
+
+      - name: Run Checkov — GitHub Actions workflows
+        id: checkov-gha
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: .github/workflows
+          framework: github_actions
+          output_format: sarif
+          output_file_path: checkov-gha.sarif
+          soft_fail: false
+
+      - name: Upload Terraform SARIF to GitHub Security
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: checkov-terraform.sarif
+          category: checkov-terraform
+
+      - name: Upload GHA SARIF to GitHub Security
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: checkov-gha.sarif
+          category: checkov-gha
+
+      - name: Generate compliance report
+        if: always()
+        run: |
+          pip install checkov --quiet
+          checkov -d . --framework terraform \
+            --compliance soc2 \
+            --output json \
+            --output-file-path checkov-soc2-report.json \
+            --quiet || true
+          echo "SOC 2 compliance scan complete. Review checkov-soc2-report.json for findings."
+
+      - name: Upload compliance report artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: checkov-compliance-report
+          path: checkov-soc2-report.json
+          retention-days: 90

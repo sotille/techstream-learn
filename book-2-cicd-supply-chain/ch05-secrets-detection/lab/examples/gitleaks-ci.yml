@@ -1,0 +1,36 @@
+name: Secret Scanning — Gitleaks
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  security-events: write  # Required for SARIF upload to GitHub Security
+
+jobs:
+  gitleaks:
+    name: Detect secrets
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout — full history required for history scan
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        with:
+          fetch-depth: 0  # Full history — without this, only the latest commit is checked
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # On failure: pipeline is blocked. The Gitleaks action exits non-zero
+        # and prints the detected secrets with file, line, and rule details.
+
+      # Upload results as SARIF for GitHub Security tab visibility
+      - name: Upload Gitleaks SARIF report
+        if: failure()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: results.sarif

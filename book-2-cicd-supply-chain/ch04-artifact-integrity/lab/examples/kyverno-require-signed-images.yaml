@@ -1,0 +1,47 @@
+# kyverno-require-signed-images.yaml
+#
+# Kyverno ClusterPolicy that enforces image signature verification at admission time.
+# Any pod attempting to run an image from ghcr.io that was not signed by the
+# approved GitHub Actions workflow will be rejected by the admission controller.
+#
+# Apply to your cluster:
+#   kubectl apply -f kyverno-require-signed-images.yaml
+#
+# Prerequisites:
+#   - Kyverno >= 1.10 installed in the cluster
+#   - Images signed via the sign-and-verify.yml workflow
+
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-signed-ghcr-images
+  annotations:
+    policies.kyverno.io/title: Require Signed Container Images
+    policies.kyverno.io/category: Software Supply Chain Security
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/description: >
+      Requires all container images from ghcr.io to be signed with Cosign using
+      keyless signing via GitHub Actions OIDC. Images without a valid Sigstore
+      signature are blocked from being scheduled in the cluster.
+spec:
+  validationFailureAction: Enforce
+  background: false
+  rules:
+    - name: check-image-signature
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      verifyImages:
+        - imageReferences:
+            - "ghcr.io/*"
+          attestors:
+            - entries:
+                - keyless:
+                    # The subject must match the workflow file path that performed signing.
+                    # Adjust the regexp to match your organization's repository structure.
+                    subject: "https://github.com/YOUR_ORG/*/\.github/workflows/sign-and-verify\.yml@refs/heads/main"
+                    issuer: "https://token.actions.githubusercontent.com"
+                    rekor:
+                      url: https://rekor.sigstore.dev

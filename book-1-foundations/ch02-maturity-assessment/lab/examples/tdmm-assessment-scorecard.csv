@@ -1,0 +1,10 @@
+Domain,Description,Participant 1 Score,Participant 2 Score,Participant 3 Score,Consensus Score,Score Range,Confidence (H/M/L),Key Gap / Evidence,Priority (1/2/3)
+1. Source Code Security,"Pre-commit hooks, secrets detection, branch protection, CODEOWNERS",,,,,,,,
+2. Build and CI Pipeline Security,"SAST/SCA in pipelines, break-the-build gates, OIDC federation, secrets manager",,,,,,,,
+3. Artifact and Registry Security,"Image scanning, SBOM generation, artifact signing, promotion gates, registry access controls",,,,,,,,
+4. Infrastructure Security,"IaC scanning (Checkov/Trivy), drift detection, cloud misconfiguration prevention, CIS benchmark",,,,,,,,
+5. Secrets Management,"Vault/Secrets Manager adoption, automated rotation, no hardcoded credentials, runtime injection",,,,,,,,
+6. Identity and Access Management,"Least-privilege roles, OIDC/workload identity, MFA enforcement, privileged access review",,,,,,,,
+7. Runtime Security and Observability,"Runtime threat detection (Falco/eBPF), log aggregation, alerting, incident response playbooks",,,,,,,,
+8. Compliance and Governance,"Policy as code, evidence collection, control mapping, audit readiness, exception tracking",,,,,,,,
+Overall Maturity Score (avg),,,,,,,,,"=SUM(Consensus)/8"

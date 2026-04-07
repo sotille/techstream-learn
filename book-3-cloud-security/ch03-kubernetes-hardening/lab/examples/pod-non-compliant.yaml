@@ -1,0 +1,18 @@
+# EDUCATIONAL EXAMPLE — Non-compliant pod that violates Pod Security Standards (restricted profile)
+# This pod will be REJECTED when the namespace has pod-security.kubernetes.io/enforce=restricted
+# Violations:
+#   - No securityContext (missing allowPrivilegeEscalation, capabilities.drop, runAsNonRoot, seccompProfile)
+#   - Running as root (no runAsNonRoot)
+apiVersion: v1
+kind: Pod
+metadata:
+  name: non-compliant-pod
+  labels:
+    app: non-compliant
+spec:
+  containers:
+    - name: app
+      image: nginx:1.25
+      ports:
+        - containerPort: 80
+      # No securityContext — will fail all restricted profile checks

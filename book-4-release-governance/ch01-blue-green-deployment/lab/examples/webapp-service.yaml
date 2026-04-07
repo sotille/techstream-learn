@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: webapp
+  labels:
+    app: webapp
+spec:
+  # The 'version' selector label is the traffic switch control point.
+  # Change this value to 'green' to switch all traffic to the green deployment.
+  # Change it back to 'blue' for an instant rollback.
+  #
+  # Switch to green:  kubectl patch service webapp -p '{"spec":{"selector":{"version":"green"}}}'
+  # Rollback to blue: kubectl patch service webapp -p '{"spec":{"selector":{"version":"blue"}}}'
+  selector:
+    app: webapp
+    version: blue    # Active version — change to 'green' to switch traffic
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+      protocol: TCP
+  type: ClusterIP

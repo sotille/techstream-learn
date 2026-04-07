@@ -1,0 +1,73 @@
+name: Serverless Security Scan
+
+# Runs on PRs that modify Lambda Terraform or function code/dependencies.
+on:
+  pull_request:
+    paths:
+      - '**.tf'
+      - '**/requirements*.txt'
+      - '**/package*.json'
+      - 'functions/**'
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  checkov-lambda:
+    name: Checkov Lambda IaC Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Run Checkov — Lambda Terraform
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: .
+          framework: terraform
+          output_format: sarif
+          output_file_path: checkov-lambda.sarif
+          soft_fail: false
+          check: CKV_AWS_45,CKV_AWS_117,CKV_AWS_58,CKV_AWS_274,CKV_AWS_*
+
+      - name: Upload SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: checkov-lambda.sarif
+          category: checkov-lambda
+
+  grype-lambda-sca:
+    name: Grype Lambda Package SCA
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Build Lambda deployment packages for scanning
+        run: |
+          for req_file in $(find . -name 'requirements*.txt' -not -path '*/.git/*'); do
+            dir=$(dirname "$req_file")
+            echo "Building package for: $dir"
+            pip install -r "$req_file" -t "$dir/package/" --quiet
+            (cd "$dir" && zip -r "function.zip" . -x "*.pyc" "__pycache__/*" >/dev/null)
+            echo "Created: $dir/function.zip"
+          done
+
+      - name: Install Grype
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | \
+            sh -s -- -b /usr/local/bin
+
+      - name: Scan Lambda packages with Grype
+        run: |
+          EXIT_CODE=0
+          for zip_file in $(find . -name 'function.zip' -not -path '*/.git/*'); do
+            echo "Scanning: $zip_file"
+            grype "$zip_file" --fail-on high || EXIT_CODE=1
+          done
+          exit $EXIT_CODE

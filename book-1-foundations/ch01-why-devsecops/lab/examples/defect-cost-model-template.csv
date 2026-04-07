@@ -1,0 +1,8 @@
+Stage,Defects Per Month,Stage Multiplier (Mid),Baseline Fix Time (hours),Hourly Rate ($),Monthly Cost ($),Notes
+Pre-commit,0,1,1,120,0,"Tooling: Gitleaks / Semgrep / pre-commit hooks"
+CI Pipeline (SAST/SCA),0,3,3,120,0,"Tooling: Semgrep / Grype / Trivy"
+QA / Staging,5,15,15,120,9000,"Defects reach QA after CI; still preventable"
+Penetration Test,10,40,40,120,48000,"External pentest or internal red team"
+Production (pre-breach),3,100,100,120,36000,"Defect found by monitoring or user report"
+Post-breach (quarterly),0.25,500,500,120,15000,"Assumes 1 incident per quarter averaged monthly"
+TOTAL,,,,,$108000,

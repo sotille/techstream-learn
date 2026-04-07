@@ -1,0 +1,41 @@
+# kube-bench Kubernetes Job — runs CIS Benchmark checks against the node
+# For managed clusters (EKS, AKS, GKE), only worker node checks run (control plane is managed).
+# Results are printed to the job's pod log.
+# Usage: kubectl apply -f kube-bench-job.yaml && kubectl logs job/kube-bench
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kube-bench
+spec:
+  template:
+    spec:
+      hostPID: true
+      nodeSelector:
+        kubernetes.io/os: linux
+      tolerations:
+        - operator: Exists
+      containers:
+        - name: kube-bench
+          image: docker.io/aquasec/kube-bench:latest
+          command: ["kube-bench", "run", "--targets=node,policies"]
+          volumeMounts:
+            - name: var-lib-kubelet
+              mountPath: /var/lib/kubelet
+              readOnly: true
+            - name: etc-systemd
+              mountPath: /etc/systemd
+              readOnly: true
+            - name: etc-kubernetes
+              mountPath: /etc/kubernetes
+              readOnly: true
+      restartPolicy: Never
+      volumes:
+        - name: var-lib-kubelet
+          hostPath:
+            path: /var/lib/kubelet
+        - name: etc-systemd
+          hostPath:
+            path: /etc/systemd
+        - name: etc-kubernetes
+          hostPath:
+            path: /etc/kubernetes

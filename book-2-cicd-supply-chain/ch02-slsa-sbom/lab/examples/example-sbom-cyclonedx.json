@@ -1,0 +1,128 @@
+{
+  "_comment": "Educational example CycloneDX 1.4 SBOM. This represents the output of running 'syft <image> -o cyclonedx-json'. Fields have been simplified for readability. Use this to understand the CycloneDX structure and compare with example-sbom-spdx.json.",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.4",
+  "serialNumber": "urn:uuid:3e671687-395b-41f5-a30f-a58921a69b79",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-04-07T12:00:00Z",
+    "tools": [
+      {
+        "vendor": "anchore",
+        "name": "syft",
+        "version": "0.90.0"
+      }
+    ],
+    "component": {
+      "type": "container",
+      "name": "registry.internal.example.com/payment-service",
+      "version": "v1.0.0",
+      "purl": "pkg:oci/payment-service@sha256:abc123def456?repository_url=registry.internal.example.com"
+    }
+  },
+  "components": [
+    {
+      "type": "library",
+      "name": "openssl",
+      "version": "3.0.8",
+      "purl": "pkg:deb/debian/openssl@3.0.8-1?distro=debian-12",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "syft:package:type",
+          "value": "deb"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "libc6",
+      "version": "2.36-9",
+      "purl": "pkg:deb/debian/libc6@2.36-9?distro=debian-12",
+      "licenses": [
+        {
+          "license": {
+            "id": "LGPL-2.1-only"
+          }
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "github.com/gin-gonic/gin",
+      "version": "1.9.1",
+      "purl": "pkg:golang/github.com/gin-gonic/gin@1.9.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "github.com/go-jose/go-jose",
+      "version": "3.0.0",
+      "purl": "pkg:golang/github.com/go-jose/go-jose@3.0.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "log4j-core",
+      "version": "2.17.2",
+      "purl": "pkg:maven/org.apache.logging.log4j/log4j-core@2.17.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "vulnerabilities": [
+        {
+          "_comment": "Note: 2.17.2 is patched. Versions <= 2.14.1 are affected by CVE-2021-44228 (Log4Shell). This entry demonstrates how vulnerability data may be attached to SBOM components.",
+          "id": "CVE-2021-44228",
+          "source": {
+            "name": "NVD",
+            "url": "https://nvd.nist.gov/vuln/detail/CVE-2021-44228"
+          },
+          "ratings": [
+            {
+              "score": 10.0,
+              "severity": "critical",
+              "method": "CVSSv3"
+            }
+          ],
+          "affects": [
+            {
+              "ref": "pkg:maven/org.apache.logging.log4j/log4j-core@2.17.2",
+              "versions": [
+                {
+                  "range": "vers:maven/<2.15.0",
+                  "status": "affected"
+                },
+                {
+                  "version": "2.17.2",
+                  "status": "unaffected"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

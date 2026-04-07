@@ -1,0 +1,13 @@
+# Default deny all ingress and egress in the payments namespace.
+# Apply this first, then selectively allow required traffic.
+# Any pod in this namespace will be isolated until an explicit allow policy is added.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: payments
+spec:
+  podSelector: {}   # Applies to all pods in the namespace
+  policyTypes:
+    - Ingress
+    - Egress

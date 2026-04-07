@@ -1,0 +1,33 @@
+# Allow ingress to payments-api pods from the api-gateway in the gateway namespace.
+# Also allows DNS egress (UDP/TCP port 53) so pods can resolve cluster DNS.
+# All other ingress and egress remain denied by the default-deny-all policy.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-gateway-ingress
+  namespace: payments
+spec:
+  podSelector:
+    matchLabels:
+      app: payments-api
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: gateway
+          podSelector:
+            matchLabels:
+              app: api-gateway
+      ports:
+        - protocol: TCP
+          port: 8080
+  egress:
+    # Allow DNS resolution
+    - ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53

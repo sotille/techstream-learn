@@ -1,0 +1,149 @@
+{
+  "_comment": "Sample IAM authorization details export for Cloudsplaining lab exercise. This represents a simplified account configuration with intentional security issues for educational analysis.",
+  "UserDetailList": [
+    {
+      "UserId": "AIDACKCEVSQ6C2EXAMPLE",
+      "UserName": "developer-user",
+      "Arn": "arn:aws:iam::123456789012:user/developer-user",
+      "AttachedManagedPolicies": [
+        {
+          "PolicyName": "DeveloperAccess",
+          "PolicyArn": "arn:aws:iam::123456789012:policy/DeveloperAccess"
+        }
+      ],
+      "UserPolicyList": []
+    }
+  ],
+  "RoleDetailList": [
+    {
+      "RoleId": "AROACKCEVSQ6C2EXAMPLE1",
+      "RoleName": "web-app-role",
+      "Arn": "arn:aws:iam::123456789012:role/web-app-role",
+      "AssumeRolePolicyDocument": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Effect": "Allow",
+            "Principal": {"Service": "ec2.amazonaws.com"},
+            "Action": "sts:AssumeRole"
+          }
+        ]
+      },
+      "AttachedManagedPolicies": [
+        {
+          "PolicyName": "WebAppPolicy",
+          "PolicyArn": "arn:aws:iam::123456789012:policy/WebAppPolicy"
+        }
+      ]
+    },
+    {
+      "RoleId": "AROACKCEVSQ6C2EXAMPLE2",
+      "RoleName": "deploy-pipeline-role",
+      "Arn": "arn:aws:iam::123456789012:role/deploy-pipeline-role",
+      "AssumeRolePolicyDocument": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Effect": "Allow",
+            "Principal": {"Service": "lambda.amazonaws.com"},
+            "Action": "sts:AssumeRole"
+          }
+        ]
+      },
+      "AttachedManagedPolicies": [
+        {
+          "PolicyName": "DeploymentAccess",
+          "PolicyArn": "arn:aws:iam::123456789012:policy/DeploymentAccess"
+        }
+      ]
+    }
+  ],
+  "Policies": [
+    {
+      "PolicyName": "WebAppPolicy",
+      "PolicyArn": "arn:aws:iam::123456789012:policy/WebAppPolicy",
+      "PolicyVersionList": [
+        {
+          "VersionId": "v1",
+          "IsDefaultVersion": true,
+          "Document": {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Sid": "S3Access",
+                "Effect": "Allow",
+                "Action": ["s3:GetObject", "s3:ListBucket"],
+                "Resource": "*"
+              },
+              {
+                "Sid": "DangerousPerms",
+                "Effect": "Allow",
+                "Action": [
+                  "ec2:DescribeInstances",
+                  "iam:ListRoles",
+                  "iam:PassRole",
+                  "ec2:RunInstances"
+                ],
+                "Resource": "*"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "PolicyName": "DeploymentAccess",
+      "PolicyArn": "arn:aws:iam::123456789012:policy/DeploymentAccess",
+      "PolicyVersionList": [
+        {
+          "VersionId": "v1",
+          "IsDefaultVersion": true,
+          "Document": {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Sid": "BroadAccess",
+                "Effect": "Allow",
+                "Action": [
+                  "iam:CreatePolicyVersion",
+                  "iam:PassRole",
+                  "lambda:*",
+                  "s3:*",
+                  "ec2:RunInstances"
+                ],
+                "Resource": "*"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "PolicyName": "DeveloperAccess",
+      "PolicyArn": "arn:aws:iam::123456789012:policy/DeveloperAccess",
+      "PolicyVersionList": [
+        {
+          "VersionId": "v1",
+          "IsDefaultVersion": true,
+          "Document": {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Sid": "DevTools",
+                "Effect": "Allow",
+                "Action": [
+                  "s3:*",
+                  "cloudformation:*",
+                  "iam:CreateRole",
+                  "iam:AttachRolePolicy",
+                  "iam:PutRolePolicy"
+                ],
+                "Resource": "*"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
