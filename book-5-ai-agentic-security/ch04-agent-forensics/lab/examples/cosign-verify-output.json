@@ -1,0 +1,45 @@
+{
+  "verification_summary": {
+    "artifact": "ghcr.io/acme-corp/infra-deploy@sha256:9c4b1a7f3e2d0b8f5a6c3e1d9f7b2a4c8e0d5f3a7b1c9e4f2d0b6a8c3e5f1d7",
+    "verification_status": "VERIFIED",
+    "verified_at": "2026-04-07T09:02:08.000Z",
+    "cosign_version": "2.4.1"
+  },
+  "certificate": {
+    "subject": "https://github.com/acme-corp/agent-infra/.github/workflows/triage-agent.yml@refs/heads/main",
+    "subject_type": "workload_identity",
+    "san_type": "URI",
+    "oidc_issuer": "https://token.actions.githubusercontent.com",
+    "workflow_ref": "acme-corp/agent-infra/.github/workflows/triage-agent.yml@refs/heads/main",
+    "workflow_sha": "f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2",
+    "repository": "acme-corp/agent-infra",
+    "repository_owner": "acme-corp",
+    "runner_environment": "github-hosted",
+    "build_trigger": "schedule",
+    "run_id": "9182736450",
+    "run_attempt": "1",
+    "not_before": "2026-04-07T09:01:50.000Z",
+    "not_after": "2026-04-07T09:11:50.000Z"
+  },
+  "bundle": {
+    "rekor_log_index": 182736459,
+    "rekor_log_id": "c0d23d6ad406973f9559f3ba2d1ca01f84147d8ffc5b8445c224f98b9591801d",
+    "integrated_time": "2026-04-07T09:02:07Z",
+    "verification_status": "VERIFIED",
+    "transparency_log": "rekor.sigstore.dev"
+  },
+  "session_metadata": {
+    "session_id": "sess-4f8a91c2",
+    "agent_id": "acme-triage-bot-v2",
+    "agent_version": "2.3.1",
+    "signing_identity": "acme-triage-bot-v2@agent.acme-corp.internal"
+  },
+  "signed_payload": {
+    "commit_sha": "e3f7a2b1c4d9e3f7a2b1c4d9e3f7a2b1c4d9e3f7",
+    "repository": "acme-corp/infra-deploy",
+    "branch": "release/2026-04-07",
+    "source_branch": "security-patch-29",
+    "commit_message": "automated: deploy security-patch-29 hotfix [triage-bot]",
+    "committed_at": "2026-04-07T09:01:52.337Z"
+  }
+}
