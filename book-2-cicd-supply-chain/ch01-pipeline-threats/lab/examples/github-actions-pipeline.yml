@@ -1,0 +1,67 @@
+# Example GitHub Actions Pipeline — For Threat Modeling Exercise
+# This pipeline is intentionally IMPERFECT — it contains several security issues
+# that you will identify during the lab exercise.
+# DO NOT use this in production without addressing the issues found in the lab.
+
+name: Build and Deploy (Example — Insecure)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    # Note: No permissions block — defaults to broad permissions
+
+    steps:
+      - uses: actions/checkout@v3
+        # Note: Action pinned to tag, not commit SHA
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          # Note: No hash verification on dependencies
+
+      - name: Run tests
+        run: pytest tests/
+
+      - name: Build Docker image
+        run: |
+          docker build -t myapp:${{ github.sha }} .
+
+      - name: Push to Docker Hub
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: |
+          echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+          docker push myapp:${{ github.sha }}
+          # Note: Long-lived credentials stored in secrets; no artifact signing
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    # Note: No environment protection gate — deploys on any push to main
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Deploy to production
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          # Note: Long-lived AWS credentials; no OIDC federation
+        run: |
+          aws ecs update-service \
+            --cluster production \
+            --service myapp \
+            --force-new-deployment
+          # Note: No deployment approval gate; no rollback procedure defined
