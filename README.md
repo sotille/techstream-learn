@@ -1,3 +1,9 @@
+<p align="center">
+  <a href="https://techstream.app">
+    <img src="https://techstream.app/images/techstream-icon.svg" width="72" height="72" alt="TechStream" />
+  </a>
+</p>
+
 # Techstream Learn
 
 Hands-on labs, exercises, and examples companion to the Techstream Book Series.
