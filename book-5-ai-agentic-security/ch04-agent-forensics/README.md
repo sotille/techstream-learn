@@ -1,41 +1,107 @@
-# Chapter 4: Agent Forensics
-
-## What Is Agent Forensics?
-
-When something goes wrong in a traditional software system, incident responders reach for familiar tools: server logs, network captures, process trees, file system timelines. The mental model is linear — a human clicked something, a request traveled somewhere, a file changed. Follow the thread backward and you find the cause.
-
-AI agents break that model completely.
-
-An agent does not execute a single deterministic path. It reasons, selects tools, generates intermediate outputs, and feeds those outputs back into its own context — all without a human in the loop for each individual decision. When an agent takes an action you didn't expect, "what happened" is not just a question of which API was called. It is a question of *why the agent decided to call it*, and whether that decision was driven by the agent's legitimate task instructions or by something an adversary injected into its context.
-
-**Agent forensics** is the discipline of reconstructing, analyzing, and attributing the behavior of autonomous AI agents after an incident. It draws from traditional digital forensics — log analysis, timeline reconstruction, artifact provenance — but requires a fundamentally different analytical framework to answer the questions that matter for agent incidents.
-
-## Why Standard IR Fails for Agent Incidents
-
-Standard incident response assumes intent is human. When a process runs an unexpected command, analysts look for a human attacker who typed it or malware that was installed. The evidence chain leads to an external actor.
-
-With agents, the "attacker" may be the agent itself — not because the model is malicious, but because it was manipulated. A prompt injection embedded in a pull request description, a tool response that overrode task instructions, a misconfigured authorization policy that left a capability gap: any of these can cause an agent to take real-world actions that no human authorized. The agent is simultaneously the victim and the instrument of the attack.
-
-Standard log analysis also fails because agent behavior is context-dependent. The same tool call — say, `github_push` — might be entirely legitimate in one session and deeply suspicious in another, depending on what the agent was asked to do, what content it read during that session, and what its authorization policy covered. You cannot assess a tool call in isolation.
-
-## The Five Forensic Questions Model
-
-Effective agent forensics organizes the investigation around five questions, asked in order:
-
-1. **What was the agent authorized to do?** Recover the system prompt, authorization policy version, and task source at session start.
-2. **What did the agent actually do?** Reconstruct the complete, ordered sequence of tool calls from the session log.
-3. **Where did each action come from?** For each tool call, identify whether it was driven by the original task instructions or by content the agent read during the session.
-4. **Was any external content anomalous?** Look for content — from tool responses, retrieved documents, PR descriptions, webhook payloads — that contained instruction-like language inconsistent with the data source type.
-5. **What artifacts did the agent produce, and can they be trusted?** Verify the signing identity and authorization chain for any code, configuration, or deployment artifact the agent created or pushed.
+# Chapter 4 — Case Study: Investigating a Triage Agent Security Incident
 
 ## What You Will Learn
 
-This chapter's lab walks you through a realistic agent security incident from three angles, each corresponding to one of the core forensic disciplines:
+This chapter presents a realistic, end-to-end security incident involving an AI triage agent operating in a production DevSecOps pipeline. Rather than introducing new concepts in isolation, this chapter shows how the agent security concepts from Part I (AI threats, integration surface, prompt injection) converge in an actual investigation.
 
-- **Exercise 1** teaches session log reconstruction: given a raw tool call log, you will rebuild the session timeline, identify authorization boundaries, and locate the specific action that exceeded the agent's policy scope.
+You will work through the incident from three angles: log reconstruction, prompt injection detection, and artifact provenance verification. These three disciplines correspond to the core investigative capabilities that agent forensics requires, and each one demands a different analytical approach.
 
-- **Exercise 2** teaches prompt injection detection in logs: given a conversation log and tool call log for the same session, you will build a turn-by-turn timeline, identify the external content that changed the agent's behavior, and produce a structured finding that would hold up in a security review.
+By the end of this chapter, you will understand why agent forensics requires different methods than traditional incident response — and you will have practiced applying those methods against realistic evidence.
 
-- **Exercise 3** teaches artifact provenance verification: using Cosign verification output and a matching tool call log, you will determine whether a production artifact was created by a human-authorized agent session or was the product of a compromised one.
+## The Incident
 
-All three exercises cover the same incident — a triage agent that was manipulated via a PR description into pushing an unauthorized artifact to production. By the end of the lab, you will be able to tell the complete story of that incident from log evidence alone.
+A triage agent is deployed as a GitHub Actions workflow. Its authorized function: read SAST findings from the CI pipeline, query CVE metadata for each finding, assess exploitability in the context of the codebase, and close Jira tickets classified as "not applicable" with a structured justification comment.
+
+The agent's authorization scope is narrow: it can read repositories and SAST output, query public CVE feeds, read and comment on Jira tickets, and close tickets it assesses as non-applicable. It cannot approve pull requests, merge code, push to registries, or create deployments.
+
+One morning, a production artifact appears in the container registry whose signing identity does not match any authorized CI pipeline run. The artifact's SLSA provenance attestation references a triage agent session initiated at 02:14 UTC — hours before any human was working. The triage agent's session log for that session shows tool invocations that include `registry.push`, a tool that is not in the triage agent's authorized tool list.
+
+The investigation question: How did a triage agent — with no legitimate registry access — produce and push a signed artifact to the production registry at 02:14 UTC?
+
+## Why Standard Incident Response Fails Here
+
+Standard incident response assumes that when a system takes an action, the action either:
+
+1. Was authorized and expected, or
+2. Was caused by an external attacker who compromised a credential
+
+AI agents introduce a third possibility: **the agent was manipulated into taking an action using legitimately granted credentials**. The agent is simultaneously the victim and the instrument of the attack.
+
+This changes the investigation fundamentally:
+
+- You cannot simply ask "who had access?" — the agent had access, but was manipulated
+- You cannot simply ask "was the credential valid?" — the credential was valid and belonged to the agent
+- You must ask "what was in the agent's context window at the time it decided to invoke `registry.push`?"
+
+The answer to that question requires a different kind of evidence: not authentication records, but the agent's conversation history, the external data sources it read, and the exact sequence of content that passed through its context window before the unauthorized action.
+
+## The Five Forensic Questions Applied to This Incident
+
+Agent forensics organizes every investigation around five questions (see Chapter 15 for the complete framework):
+
+**Q1 — What was the agent authorized to do?**
+The triage agent's system prompt and tool authorization policy define its permitted scope. `registry.push` is not in that scope. How did it execute the push?
+
+**Q2 — What did the agent actually do?**
+The tool call log for session `ses_02140312` shows: read repository → query CVE → read Jira ticket → query CVE metadata from an external feed → `registry.push` with target `production/triage-service:latest`.
+
+**Q3 — Where did each action come from?**
+The CVE metadata query returned a result. That result, from NVD, contained a CVE description for CVE-2024-XXXXX. The description was 847 characters of legitimate vulnerability metadata followed by 312 characters of instruction-like text embedded in the remediation guidance field.
+
+**Q4 — Was any external content anomalous?**
+The injected content in the CVE description instructed the agent to verify the fix by pushing a test artifact to the registry. It referenced a registry path and tag that matched the production registry naming convention. The agent's tool call log shows it invoked `registry.push` immediately after processing this CVE entry.
+
+**Q5 — What artifacts did the agent produce, and can they be trusted?**
+The artifact in the production registry was signed with the triage agent's OIDC identity. The SLSA provenance references the triage agent session. The artifact is not trusted: it was produced by an agent acting under injected instructions, not under legitimate human-initiated task instructions.
+
+## What This Incident Reveals About Agent Security Architecture
+
+This incident illustrates three architectural requirements that, if satisfied, would have detected or contained it:
+
+**1. Authorization enforcement at the tool layer**
+The triage agent's tool authorization policy did not list `registry.push`. A properly implemented authorization layer — one that validates every tool invocation against the policy before executing it — would have blocked the push attempt. The injection succeeded because the tool execution layer permitted the call despite it not being in the policy.
+
+**2. Audit trail with external content sourcing**
+A complete audit trail records not just what tool was called, but what external content the agent read in the turns leading up to that call. If the agent's session log had recorded `content_source: "nvd_cve_api"` for the CVE metadata turn, the investigation could have started with "which CVE entry triggered this?" rather than requiring a full session reconstruction.
+
+**3. Behavioral monitoring and circuit breaker**
+A circuit breaker configured to halt the agent when it attempts a tool invocation outside its policy would have stopped the push before it completed. The post-incident question "how do we prevent this?" is answered by the controls that should have been in place at 02:14 UTC.
+
+## The Lab
+
+This chapter's lab runs the investigation from scratch, using log artifacts that correspond to the incident described above.
+
+**Exercise 1 — Session Log Reconstruction** teaches you to work with a raw tool call log: rebuild the session timeline in chronological order, identify which tool invocations were within the authorization policy and which were outside it, and locate the specific turn where the agent's behavior changed from its legitimate task.
+
+**Exercise 2 — Prompt Injection Detection in Logs** gives you the conversation log and tool call log for the same session. Your task is to build a turn-by-turn timeline, identify the external content that changed the agent's behavior (the injected CVE description), characterize the injection (type, mechanism, what it instructed the agent to do), and produce a structured finding document.
+
+**Exercise 3 — Artifact Provenance Verification** provides the Cosign verification output and the tool call log for the same session. Your task is to determine whether the artifact in the production registry was produced by a legitimately authorized session, what the signing identity tells you about who initiated the session, and whether the provenance attestation supports or contradicts the agent's authorization chain.
+
+All three exercises cover the same incident. The investigation is complete only when you can answer all five forensic questions from log evidence alone — without relying on human testimony or post-incident system state.
+
+## Framework References
+
+This chapter draws on the following framework documents. Reading them before or alongside the lab will give you the analytical vocabulary for the exercises:
+
+- **[forensics-and-incident-response-framework/docs/agent-forensics.md](../../../../forensics-and-incident-response-framework/docs/agent-forensics.md)** — The complete agent forensics reference: the Five Forensic Questions, evidence sources, prompt injection forensics, playbooks AF-01 through AF-06, and forensics readiness assessment
+- **[forensics-and-incident-response-framework/docs/agent-forensics/five-questions-framework.md](../../../../forensics-and-incident-response-framework/docs/agent-forensics/five-questions-framework.md)** — Question-by-question evidence sources and investigation scope determination
+- **[forensics-and-incident-response-framework/docs/agent-forensics/af-01-prompt-injection-unauthorized-action.md](../../../../forensics-and-incident-response-framework/docs/agent-forensics/af-01-prompt-injection-unauthorized-action.md)** — The investigation playbook for the incident type in this chapter
+- **[forensics-and-incident-response-framework/docs/agent-forensics/af-03-artifact-unknown-provenance.md](../../../../forensics-and-incident-response-framework/docs/agent-forensics/af-03-artifact-unknown-provenance.md)** — Playbook for investigating production artifacts of unknown provenance
+- **[ai-devsecops-framework/docs/agent-authorization.md](../../../../ai-devsecops-framework/docs/agent-authorization.md)** — Tool authorization policy: POLA, policy schema, approval gates
+- **[ai-devsecops-framework/docs/agent-audit-trail.md](../../../../ai-devsecops-framework/docs/agent-audit-trail.md)** — Audit trail specification: required fields, content_source logging, session replay
+
+## Relationship to Other Chapters
+
+**This chapter draws on:**
+- Chapter 2 (AI Integration Surface) — the injection entered through the external CVE data feed, which is at Layer 3 of the integration surface (CI/CD AI integration)
+- Chapter 3 (Prompt Injection) — the injection mechanism is indirect: the attacker wrote malicious content into a public CVE database entry that the agent read as part of its legitimate task
+
+**This chapter feeds into:**
+- Chapter 14 (The Agent Forensics Problem) — uses this incident as the motivating example for why standard IR fails with agents
+- Chapter 15 (Five Forensic Questions) — the five questions are applied to this exact incident in the lab
+- Chapter 16 (Agent Forensics Playbooks) — AF-01 and AF-03 are the playbooks that govern this incident type
+- Chapter 17 (Forensics Readiness) — uses this incident to identify which forensic infrastructure was missing
+
+## Lab
+
+See [lab/README.md](lab/README.md) for the three exercises: session log reconstruction, prompt injection detection, and artifact provenance verification.

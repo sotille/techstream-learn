@@ -1,4 +1,4 @@
-# Chapter 3 — Supply Chain Attacks Targeting AI Components
+# Chapter 7 — Model Supply Chain Security: Provenance, Scanning, and Hugging Face Risk
 
 ## What You Will Learn
 

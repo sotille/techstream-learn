@@ -271,3 +271,4 @@ Create a `model-provenance.json` for an AI component deployed in a pipeline:
 - [software-supply-chain-security-framework](../../../../../software-supply-chain-security-framework/README.md) — SBOM and supply chain security framework
 - Glossary: slopsquatting, model poisoning, SLSA, SBOM
 - Chapter 1: AI Pipeline Risks — for the broader threat landscape
+

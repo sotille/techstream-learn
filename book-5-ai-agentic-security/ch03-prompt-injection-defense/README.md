@@ -1,8 +1,10 @@
-# Chapter 2 — Prompt Injection in DevSecOps Pipelines: Patterns and Defenses
+# Chapter 3 — Prompt Injection in DevSecOps Pipelines: Architectural Defense Reference
+
+> **Note:** This is a companion deep-dive to [ch03-prompt-injection](../ch03-prompt-injection/), which is the primary chapter narrative and contains Lab 02. This document provides extended technical content on architectural defenses, output validation patterns, and forensic audit trail requirements for AI pipeline components. Use it as a reference alongside the main chapter.
 
 ## What You Will Learn
 
-This chapter provides a technical treatment of prompt injection as it applies to DevSecOps pipelines — not web chatbots. You will learn the direct and indirect injection patterns relevant to CI/CD environments, understand why generic defenses (keyword filters, model-level safety instructions) are insufficient, and implement architectural defenses that remain effective even when the model is successfully manipulated.
+This reference provides a technical treatment of prompt injection as it applies to DevSecOps pipelines — not web chatbots. You will learn the direct and indirect injection patterns relevant to CI/CD environments, understand why generic defenses (keyword filters, model-level safety instructions) are insufficient, and implement architectural defenses that remain effective even when the model is successfully manipulated.
 
 ## Why This Matters
 
@@ -125,7 +127,9 @@ These records enable reconstruction of every AI-influenced pipeline decision and
 
 Prompt injection in DevSecOps pipelines is an indirect attack: adversaries embed instructions in data the pipeline processes normally — CVE descriptions, commit messages, code comments. Model-level defenses are probabilistic and insufficient for security-critical decisions. Effective defense is architectural: structurally separate instructions from untrusted data, validate AI outputs with deterministic rules before consequential actions, minimize context window exposure to untrusted content, and maintain auditable records of every AI decision.
 
-**Next:** Chapter 3 examines supply chain attacks specifically targeting AI components — slopsquatting, model poisoning, and compromised fine-tuning pipelines.
+**Continue to:** [Chapter 7 — Model Supply Chain](../ch07-model-supply-chain/) examines supply chain attacks specifically targeting AI components — slopsquatting, model poisoning, and compromised fine-tuning pipelines.
+
+**Related:** [Chapter 4 — Agent Forensics](../ch04-agent-forensics/) covers how to investigate incidents where prompt injection may have influenced agent behavior, using the Five Forensic Questions Framework and playbooks AF-01 and AF-02.
 
 ## Lab
 

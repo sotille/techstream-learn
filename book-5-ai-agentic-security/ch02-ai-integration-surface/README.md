@@ -1,4 +1,4 @@
-# Chapter 1 — AI Components in the Delivery Pipeline: Risks and Attack Surface
+# Chapter 2 — The AI Integration Surface: Five Layers of Risk
 
 ## What You Will Learn
 
